@@ -116,9 +116,31 @@ class CovalentBond{
     }
 }
 
+class IonicBond{
+    constructor(atom1, atom2){
+        this.atom1 = atom1;
+        this.atom2 = atom2;
+        this.charge1 = 0;
+        this.charge2 = 0;
+    }
+    drawSelf(ctx){
+        ctx.strokeStyle = "#888888FF";
+        ctx.lineWidth = 17;
+        ctx.beginPath();
+        ctx.moveTo(this.atom1.x, this.atom1.y);
+        ctx.lineTo(this.atom2.x, this.atom2.y);
+        ctx.stroke();
+    }
+    resetCharge(){
+        this.charge1 = this.atom1.protons - this.atom1.electrons.length - this.atom1.covalentBonds.length;
+        this.charge2 = this.atom2.protons - this.atom2.electrons.length - this.atom2.covalentBonds.length;
+    }
+}
+
 mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 let atoms = [];
 let covalentBonds = [];
+let ionicBonds = [];
 let covalentBondAtom1 = "none";
 let covalentBondAtom2 = "none";
 let movingElectron = "none";
@@ -136,6 +158,11 @@ function colorString(r, g, b, a){
     b = Math.floor(b*255)*256;
     a = Math.floor(a*255);
     return "#"+(r+g+b+a).toString(16).padStart(8, "0");
+}
+
+function createNewIonicBond(atom1, atom2){
+    let ionicBond = new IonicBond(atom1, atom2);
+    ionicBonds.push(ionicBond);
 }
 
 function createNewAtom(protons){
@@ -188,14 +215,13 @@ function mainCanvasClicked(event){
                 if (pickTwoAtomsType == "add-covalent-bond") {
                     addCovalentBond(covalentBondAtom1, covalentBondAtom2);
                 }
-                if (pickTwoAtomsType == "add-covalent-bond") {
+                if (pickTwoAtomsType == "remove-covalent-bond") {
                     removeCovalentBond(covalentBondAtom1, covalentBondAtom2);
-                    //TODO add removeCovalentBond function
                 }
             }
         }
     } else {
-        if ((closestElectron.x-event.clientX)**2 + (closestElectron.y-event.clientY)**2 < 121) {
+        if ((closestElectron.x-event.clientX)**2 + (closestElectron.y-event.clientY)**2 < 169) {
             movingElectron = closestElectron;
             function mainCanvasUnclicked(){
                 mainCanvas.removeEventListener("mouseup", mainCanvasUnclicked);
@@ -207,6 +233,7 @@ function mainCanvasClicked(event){
                     }
                 });
                 if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 < 2209) {
+                    createNewIonicBond(closestElectron.atom, closestAtom);
                     closestElectron.atom.electrons.splice(closestElectron.id, 1);
                     closestAtom.electrons.push(closestElectron);
                     closestElectron.atom.resetElectronIds();
@@ -265,11 +292,52 @@ function addCovalentBond(atom1, atom2){
     atom2.electrons.splice(atom2.electrons.length-1, 1);
 }
 
+function removeCovalentBond(atom1, atom2){
+    let toBeRemoved = "none";
+    let toBeRemovedNumber = 0;
+    for (i=0; i<atom1.covalentBonds.length; i++) {
+        if (atom1.covalentBonds[i].atom1 == atom2) {
+            toBeRemoved = atom1.covalentBonds[i];
+            toBeRemovedNumber = i;
+        } else {
+            if (atom1.covalentBonds[i].atom2 == atom2) {
+                toBeRemoved = atom1.covalentBonds[i];
+                toBeRemovedNumber = i;
+            }
+        }
+    }
+    if (toBeRemoved != "none") {
+        toBeRemoved.electrons[toBeRemoved.electrons.length-1].atom = atom1;
+        atom1.electrons.push(toBeRemoved.electrons[toBeRemoved.electrons.length-1]);
+        toBeRemoved.electrons.splice(toBeRemoved.electrons.length-1, 1);
+        toBeRemoved.electrons[toBeRemoved.electrons.length-1].atom = atom2;
+        atom2.electrons.push(toBeRemoved.electrons[toBeRemoved.electrons.length-1]);
+        toBeRemoved.electrons.splice(toBeRemoved.electrons.length-1, 1);
+        atom1.covalentBonds.splice(toBeRemovedNumber, 1);
+        for (i=0; i<atom1.covalentBonds.length; i++) {
+            if (atom2.covalentBonds[i].atom1 == atom1) {
+                toBeRemovedNumber = i;
+            } else {
+                if (atom2.covalentBonds[i].atom2 == atom1) {
+                    toBeRemovedNumber = i;
+                }
+            }
+        }
+        atom2.covalentBonds.splice(toBeRemovedNumber, 1);
+    }
+}
+
 drawingLoop();
 
 function drawingLoop(){
     mainCTX.fillStyle = "#00000022";
     mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+    ionicBonds.forEach((ionicBond)=>{
+        ionicBond.resetCharge();
+        if (ionicBond.charge1 != 0) {
+            ionicBond.drawSelf(mainCTX);
+        }
+    });
     covalentBonds.forEach((covalentBond)=>{
         covalentBond.drawSelf(mainCTX);
     });
