@@ -4,6 +4,9 @@ let mainCanvas = document.getElementById("maincanvas");
 let mainCTX = mainCanvas.getContext("2d");
 let addCovalentBondButton = document.getElementById("addcovalentbondbutton");
 let removeCovalentBondButton = document.getElementById("removecovalentbondbutton");
+let instructionsButton = document.getElementById("instructionsbutton");
+let makeStuffMenu = document.getElementById("makestuffmenu");
+let instructionsMenu = document.getElementById("instructionsmenu");
 
 class Atom{
     constructor(protons){
@@ -14,6 +17,7 @@ class Atom{
         this.firstShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.secondShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.covalentBonds = [];
+        this.ionicBonds = [];
     }
     drawSelf(ctx){
         if (this.electrons.length+(this.covalentBonds.length*2) > 2) {
@@ -117,27 +121,23 @@ class CovalentBond{
 }
 
 class IonicBond{
-    constructor(atom1, atom2){
-        this.atom1 = atom1;
-        this.atom2 = atom2;
-        this.charge1 = 0;
-        this.charge2 = 0;
+    constructor(positiveAtom, negativeAtom){
+        this.positiveAtom = positiveAtom;
+        this.negativeAtom = negativeAtom;
     }
     drawSelf(ctx){
         ctx.strokeStyle = "#888888FF";
         ctx.lineWidth = 17;
         ctx.beginPath();
-        ctx.moveTo(this.atom1.x, this.atom1.y);
-        ctx.lineTo(this.atom2.x, this.atom2.y);
+        ctx.moveTo(this.positiveAtom.x, this.positiveAtom.y);
+        ctx.lineTo(this.negativeAtom.x, this.negativeAtom.y);
         ctx.stroke();
-    }
-    resetCharge(){
-        this.charge1 = this.atom1.protons - this.atom1.electrons.length - this.atom1.covalentBonds.length;
-        this.charge2 = this.atom2.protons - this.atom2.electrons.length - this.atom2.covalentBonds.length;
     }
 }
 
 mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+makeStuffMenu.style.display = "block";
+instructionsMenu.style.display = "none";
 let atoms = [];
 let covalentBonds = [];
 let ionicBonds = [];
@@ -145,6 +145,7 @@ let covalentBondAtom1 = "none";
 let covalentBondAtom2 = "none";
 let movingElectron = "none";
 let pickTwoAtomsType = "none";
+let instructionsShown = false;
 
 elementSymbols = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne"];
 
@@ -160,8 +161,10 @@ function colorString(r, g, b, a){
     return "#"+(r+g+b+a).toString(16).padStart(8, "0");
 }
 
-function createNewIonicBond(atom1, atom2){
-    let ionicBond = new IonicBond(atom1, atom2);
+function createNewIonicBond(positiveAtom, negativeAtom){
+    let ionicBond = new IonicBond(positiveAtom, negativeAtom);
+    positiveAtom.ionicBonds.push(ionicBond);
+    negativeAtom.ionicBonds.push(ionicBond);
     ionicBonds.push(ionicBond);
 }
 
@@ -233,7 +236,31 @@ function mainCanvasClicked(event){
                     }
                 });
                 if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 < 2209) {
-                    createNewIonicBond(closestElectron.atom, closestAtom);
+                    let ionicBondId = "none";
+                    let ionicBond = "none";
+                    for (i=0; i<closestElectron.atom.ionicBonds.length; i++) {
+                        if (closestElectron.atom.ionicBonds[i].positiveAtom == closestAtom) {
+                            ionicBondId = i;
+                            ionicBond = closestElectron.atom.ionicBonds[i];
+                        }
+                    }
+                    if (ionicBond == "none") {
+                        createNewIonicBond(closestElectron.atom, closestAtom);
+                    } else {
+                        closestElectron.atom.ionicBonds.splice(ionicBondId, 1);
+                        for (i=0; i<closestAtom.ionicBonds.length; i++) {
+                            if (closestAtom.ionicBonds[i] == ionicBond) {
+                                ionicBondId = i;
+                            }
+                        }
+                        closestAtom.ionicBonds.splice(ionicBondId, 1);
+                        for (i=0; i<ionicBonds.length; i++) {
+                            if (ionicBonds[i] == ionicBond) {
+                                ionicBondId = i;
+                            }
+                        }
+                        ionicBonds.splice(ionicBondId, 1);
+                    }
                     closestElectron.atom.electrons.splice(closestElectron.id, 1);
                     closestAtom.electrons.push(closestElectron);
                     closestElectron.atom.resetElectronIds();
@@ -327,28 +354,43 @@ function removeCovalentBond(atom1, atom2){
     }
 }
 
+function instructionsButtonClicked(){
+    instructionsShown = !instructionsShown;
+    if (instructionsShown) {
+        instructionsMenu.style.display = "block";
+        makeStuffMenu.style.display = "none";
+        instructionsButton.innerText = "<back";
+    } else {
+        makeStuffMenu.style.display = "block";
+        instructionsMenu.style.display = "none";
+        instructionsButton.innerText = "instructions";
+    }
+}
+instructionsButton.addEventListener("click", instructionsButtonClicked);
+
 drawingLoop();
 
 function drawingLoop(){
-    mainCTX.fillStyle = "#00000022";
-    mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-    ionicBonds.forEach((ionicBond)=>{
-        ionicBond.resetCharge();
-        if (ionicBond.charge1 != 0) {
+    if (instructionsShown) {
+
+    } else {
+        mainCTX.fillStyle = "#00000022";
+        mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+        ionicBonds.forEach((ionicBond)=>{
             ionicBond.drawSelf(mainCTX);
-        }
-    });
-    covalentBonds.forEach((covalentBond)=>{
-        covalentBond.drawSelf(mainCTX);
-    });
-    atoms.forEach((atom)=>{
-        atom.drawSelf(mainCTX);
-        atom.electrons.forEach((electron)=>{
-            if (electron != movingElectron) {
-                electron.goToAtom();
-            }
-            electron.drawSelf(mainCTX);
         });
-    });
+        covalentBonds.forEach((covalentBond)=>{
+            covalentBond.drawSelf(mainCTX);
+        });
+        atoms.forEach((atom)=>{
+            atom.drawSelf(mainCTX);
+            atom.electrons.forEach((electron)=>{
+                if (electron != movingElectron) {
+                    electron.goToAtom();
+                }
+                electron.drawSelf(mainCTX);
+            });
+        });
+    }
     requestAnimationFrame(drawingLoop);
 }
