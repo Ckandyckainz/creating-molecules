@@ -7,9 +7,13 @@ let removeCovalentBondButton = document.getElementById("removecovalentbondbutton
 let instructionsButton = document.getElementById("instructionsbutton");
 let makeStuffMenu = document.getElementById("makestuffmenu");
 let instructionsMenu = document.getElementById("instructionsmenu");
+let atomModeButton = document.getElementById("atommodebutton");
+let moleculeModeButton = document.getElementById("moleculemodebutton");
 
 class Atom{
     constructor(protons){
+        this.allId = allIdCounter;
+        allIdCounter++;
         this.protons = protons;
         this.electrons = [];
         this.x = randomBetween(64, 128, 1);
@@ -18,6 +22,8 @@ class Atom{
         this.secondShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.covalentBonds = [];
         this.ionicBonds = [];
+        this.connections = [];
+        this.molecule = [];
     }
     drawSelf(ctx){
         if (this.electrons.length+(this.covalentBonds.length*2) > 2) {
@@ -61,10 +67,60 @@ class Atom{
             this.electrons[i].id = i;
         }
     }
+    resetConnections(){
+        this.connections = [];
+        this.covalentBonds.forEach((covalentBond)=>{
+            if (covalentBond.atom1.allId != this.allId) {
+                if (!arrayHas(this.connections, covalentBond.atom1)) {
+                    this.connections.push(covalentBond.atom1);
+                }
+            } else {
+                if (covalentBond.atom2.allId != this.allId) {
+                    if (!arrayHas(this.connections, covalentBond.atom2)) {
+                        this.connections.push(covalentBond.atom2);
+                    }
+                }
+            }
+        });
+        this.ionicBonds.forEach((ionicBond)=>{
+            if (ionicBond.positiveAtom.allId != this.allId) {
+                if (!arrayHas(this.connections, ionicBond.positiveAtom)) {
+                    this.connections.push(ionicBond.positiveAtom);
+                }
+            } else {
+                if (ionicBond.negativeAtom.allId != this.allId) {
+                    if (!arrayHas(this.connections, ionicBond.negativeAtom)) {
+                        this.connections.push(ionicBond.negativeAtom);
+                    }
+                }
+            }
+        });
+    }
+    resetMolecule(){
+        this.molecule = [];
+        this.resetConnections();
+        this.connections.forEach((connection)=>{
+            this.addAtomToMolecule(connection);
+        });
+        return this.molecule;
+    }
+    addAtomToMolecule(atom){
+        if (!arrayHas(this.molecule, atom)) {
+            if (this.allId != atom.allId) {
+                this.molecule.push(atom);
+                atom.resetConnections();
+                atom.connections.forEach((connectedAtom)=>{
+                    this.addAtomToMolecule(connectedAtom);
+                });
+            }
+        }
+    }
 }
 
 class Electron{
     constructor(atom, id){
+        this.allId = allIdCounter;
+        allIdCounter++;
         this.atom = atom;
         this.id = id;
         this.x;
@@ -99,6 +155,8 @@ class Electron{
 
 class CovalentBond{
     constructor(atom1, atom2){
+        this.allId = allIdCounter;
+        allIdCounter++;
         this.atom1 = atom1;
         this.atom2 = atom2;
         this.electrons = [];
@@ -122,6 +180,8 @@ class CovalentBond{
 
 class IonicBond{
     constructor(positiveAtom, negativeAtom){
+        this.allId = allIdCounter;
+        allIdCounter++;
         this.positiveAtom = positiveAtom;
         this.negativeAtom = negativeAtom;
     }
@@ -138,6 +198,7 @@ class IonicBond{
 mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 makeStuffMenu.style.display = "block";
 instructionsMenu.style.display = "none";
+atomModeButton.style.background = "gold";
 let atoms = [];
 let covalentBonds = [];
 let ionicBonds = [];
@@ -146,6 +207,8 @@ let covalentBondAtom2 = "none";
 let movingElectron = "none";
 let pickTwoAtomsType = "none";
 let instructionsShown = false;
+let allIdCounter = 0;
+let mode = "atom";
 
 elementSymbols = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne"];
 
@@ -159,6 +222,16 @@ function colorString(r, g, b, a){
     b = Math.floor(b*255)*256;
     a = Math.floor(a*255);
     return "#"+(r+g+b+a).toString(16).padStart(8, "0");
+}
+
+function arrayHas(array, item){
+    let hasItem = false;
+    array.forEach((arrayItem)=>{
+        if (arrayItem.allId == item.allId) {
+            hasItem = true;
+        }
+    });
+    return hasItem;
 }
 
 function createNewIonicBond(positiveAtom, negativeAtom){
@@ -206,6 +279,13 @@ function mainCanvasClicked(event){
         }
         mainCanvas.addEventListener("mouseup", mainCanvasUnclicked);
         function mouseMoved(moveEvent){
+            if (mode == "molecule") {
+                closestAtom.resetMolecule();
+                closestAtom.molecule.forEach((atom)=>{
+                    atom.x += moveEvent.clientX-closestAtom.x;
+                    atom.y += moveEvent.clientY-closestAtom.y;
+                });
+            }
             closestAtom.x = moveEvent.clientX;
             closestAtom.y = moveEvent.clientY;
         }
@@ -367,6 +447,20 @@ function instructionsButtonClicked(){
     }
 }
 instructionsButton.addEventListener("click", instructionsButtonClicked);
+
+function atomModeButtonClicked(){
+    mode = "atom";
+    atomModeButton.style.background = "gold";
+    moleculeModeButton.style.background = "white";
+}
+atomModeButton.addEventListener("click", atomModeButtonClicked);
+
+function moleculeModeButtonClicked(){
+    mode = "molecule";
+    moleculeModeButton.style.background = "gold";
+    atomModeButton.style.background = "white";
+}
+moleculeModeButton.addEventListener("click", moleculeModeButtonClicked);
 
 drawingLoop();
 

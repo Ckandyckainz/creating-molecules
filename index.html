@@ -6,7 +6,7 @@
     <body>
         <div id=instructionsmenu>
             <h1>Instructions</h1>
-            <text>To add an atom, type the atomic number (the number of protons) into the text-box next to the "Add Atom:" button, and then click on the button. It will only add an atom if the number you type in is between 1 and 10. Decimals also work, but that results in an atom of element "undefined".The blue circle in the center of the atom with the element symbol on it represents the nucleus.The thin gray circles around the nucleus represent the first (1s) and second (2s, 2p) shells. The small red circles represent electrons. The dark purple color between the shells represents the atom's overall charge, which becomes more red if the atom's more negative, and more blue if the atom's more positive. You can drag the atoms around by dragging on their nuclei. You can also move electrons. If you drag an electron to another atom, the electron will be added to that atom and creates an ionic bond, represented by a wide gray line connecting the two atoms. To add covalent bonds, click on the "Add Covalent Bond" button, and then click in the middle of the nuclei of the two atoms you want to have have a covalent bond. A white line will appear, connecting them together. If you add multiple covalent bonds between the same two electrons, there will be multiple white lines. There will also be a line of electrons perpendicular to the white lines, and those are the electrons shared between the atoms.</text>
+            <text>To add an atom, type the atomic number (the number of protons) into the text-box next to the "Add Atom:" button, and then click on the button. It will only add an atom if the number you type in is between 1 and 10. Decimals also work, but that results in an atom of element "undefined".The blue circle in the center of the atom with the element symbol on it represents the nucleus.The thin gray circles around the nucleus represent the first (1s) and second (2s, 2p) shells. The small red circles represent electrons. The dark purple color between the shells represents the atom's overall charge, which becomes more red if the atom's more negative, and more blue if the atom's more positive. You can drag the atoms around by dragging on their nuclei. To drag around whole molecules, switch to molecule-mode by clicking on the "molecule" button next to the thing that says "Mode:". You can also move electrons. If you drag an electron to another atom, the electron will be added to that atom and creates an ionic bond, represented by a wide gray line connecting the two atoms. To add covalent bonds, click on the "Add Covalent Bond" button, and then click in the middle of the nuclei of the two atoms you want to have have a covalent bond. A white line will appear, connecting them together. If you add multiple covalent bonds between the same two electrons, there will be multiple white lines. There will also be a line of electrons perpendicular to the white lines, and those are the electrons shared between the atoms.</text>
         </div>
         <div id=makestuffmenu>
             <canvas id="maincanvas" width="1280" height="576"></canvas>
@@ -14,6 +14,9 @@
             <input id="addatomnumber" type="text">
             <button id="addcovalentbondbutton">Add Covalent Bond</button>
             <button id="removecovalentbondbutton">Remove Covalent Bond</button>
+            <text>Mode:</text>
+            <button id=atommodebutton>Atom</button>
+            <button id=moleculemodebutton>Molecule</button>
         </div>
         <button id="instructionsbutton">Instructions</button>
         <script src="atoms.js"></script>
