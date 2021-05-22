@@ -4,21 +4,27 @@
 
     </head>
     <body>
-        <div id=instructionsmenu>
+        <div id="instructionsmenu">
             <h1>Instructions</h1>
-            <text>To add an atom, type the atomic number (the number of protons) into the text-box next to the "Add Atom:" button, and then click on the button. It will only add an atom if the number you type in is between 1 and 10. Decimals also work, but that results in an atom of element "undefined".The blue circle in the center of the atom with the element symbol on it represents the nucleus.The thin gray circles around the nucleus represent the first (1s) and second (2s, 2p) shells. The small red circles represent electrons. The dark purple color between the shells represents the atom's overall charge, which becomes more red if the atom's more negative, and more blue if the atom's more positive. You can drag the atoms around by dragging on their nuclei. To drag around whole molecules, switch to molecule-mode by clicking on the "molecule" button next to the thing that says "Mode:". You can also move electrons. If you drag an electron to another atom, the electron will be added to that atom and creates an ionic bond, represented by a wide gray line connecting the two atoms. To add covalent bonds, click on the "Add Covalent Bond" button, and then click in the middle of the nuclei of the two atoms you want to have have a covalent bond. A white line will appear, connecting them together. If you add multiple covalent bonds between the same two electrons, there will be multiple white lines. There will also be a line of electrons perpendicular to the white lines, and those are the electrons shared between the atoms.</text>
+            <text>To add an atom, type the atomic number (the number of protons) into the text-box next to the "Add Atom:" button, and then click on the button. It will only add an atom if the number you type in is between 1 and 10. Decimals also work, but that results in an atom of element "undefined".The blue circle in the center of the atom with the element symbol on it represents the nucleus.The thin gray circles around the nucleus represent the first (1s) and second (2s, 2p) shells. The small red circles represent electrons. The dark purple color between the shells represents the atom's overall charge, which becomes more red if the atom's more negative, and more blue if the atom's more positive. You can drag the atoms around by dragging on their nuclei. To drag around whole molecules, switch to molecule-mode by clicking on the "molecule" button next to the thing that says "Mode:". You can also move electrons. If you drag an electron to another atom, the electron will be added to that atom and creates an ionic bond, represented by a wide gray line connecting the two atoms. To add covalent bonds, click on the "Add Covalent Bond" button, and then click in the middle of the nuclei of the two atoms you want to have have a covalent bond. A white line will appear, connecting them together. If you add multiple covalent bonds between the same two electrons, there will be multiple white lines. There will also be a line of electrons perpendicular to the white lines, and those are the electrons shared between the atoms. To make metalic bonds, start by clicking on the "Metalic Bonds" button. That will show the metalic bonds menu if you scroll down. Click "Add Metalic Bond:" to add a metalic bond. If you select the "Select Atoms" button of a metalic bond, it will show yellow circles around every atom in the metalic bond. You can select and deselect the atoms by clicking on them. To select electrons, click the "Select Electrons" button, which works the same as selecting atoms except that you can't deselect the electrons. The electrons start moving right after you click on them. The "Return Electrons" and "Delete" buttons that each metalic bond has doesn't work yet. Also, make sure to scroll up to the top so that you can see the entire canvas whenever you try to click on anything, or it won't work.</text>
         </div>
         <div id=makestuffmenu>
             <canvas id="maincanvas" width="1280" height="576"></canvas>
             <button id="addatombutton">Add Atom:</button>
-            <input id="addatomnumber" type="text">
+            <input id="addatomnumber" type="text" value = "(atomic number / protons)">
+            <button id="removeatombutton">Remove Atom</button>
             <button id="addcovalentbondbutton">Add Covalent Bond</button>
             <button id="removecovalentbondbutton">Remove Covalent Bond</button>
+            <button id="showmetalicbondsbutton">Metalic Bonds</button>
             <text>Mode:</text>
-            <button id=atommodebutton>Atom</button>
-            <button id=moleculemodebutton>Molecule</button>
+            <button id="atommodebutton">Atom</button>
+            <button id="moleculemodebutton">Molecule</button>
         </div>
         <button id="instructionsbutton">Instructions</button>
+        <div id="metalicbondsmenu">
+            <button id="addmetalicbondbutton">Add Metalic Bond:</button>
+            <input id="addmetalicbondname" value="(name)">
+        </div>
         <script src="atoms.js"></script>
     </body>
 </html>

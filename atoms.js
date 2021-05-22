@@ -9,6 +9,11 @@ let makeStuffMenu = document.getElementById("makestuffmenu");
 let instructionsMenu = document.getElementById("instructionsmenu");
 let atomModeButton = document.getElementById("atommodebutton");
 let moleculeModeButton = document.getElementById("moleculemodebutton");
+let removeAtomButton = document.getElementById("removeatombutton");
+let showMetalicBondsButton = document.getElementById("showmetalicbondsbutton");
+let metalicBondsMenu = document.getElementById("metalicbondsmenu");
+let addMetalicBondButton = document.getElementById("addmetalicbondbutton");
+let addMetalicBondName = document.getElementById("addmetalicbondname");
 
 class Atom{
     constructor(protons){
@@ -71,12 +76,12 @@ class Atom{
         this.connections = [];
         this.covalentBonds.forEach((covalentBond)=>{
             if (covalentBond.atom1.allId != this.allId) {
-                if (!arrayHas(this.connections, covalentBond.atom1)) {
+                if (!arrayHas(this.connections, covalentBond.atom1).hasItem) {
                     this.connections.push(covalentBond.atom1);
                 }
             } else {
                 if (covalentBond.atom2.allId != this.allId) {
-                    if (!arrayHas(this.connections, covalentBond.atom2)) {
+                    if (!arrayHas(this.connections, covalentBond.atom2).hasItem) {
                         this.connections.push(covalentBond.atom2);
                     }
                 }
@@ -84,12 +89,12 @@ class Atom{
         });
         this.ionicBonds.forEach((ionicBond)=>{
             if (ionicBond.positiveAtom.allId != this.allId) {
-                if (!arrayHas(this.connections, ionicBond.positiveAtom)) {
+                if (!arrayHas(this.connections, ionicBond.positiveAtom).hasItem) {
                     this.connections.push(ionicBond.positiveAtom);
                 }
             } else {
                 if (ionicBond.negativeAtom.allId != this.allId) {
-                    if (!arrayHas(this.connections, ionicBond.negativeAtom)) {
+                    if (!arrayHas(this.connections, ionicBond.negativeAtom).hasItem) {
                         this.connections.push(ionicBond.negativeAtom);
                     }
                 }
@@ -105,7 +110,7 @@ class Atom{
         return this.molecule;
     }
     addAtomToMolecule(atom){
-        if (!arrayHas(this.molecule, atom)) {
+        if (!arrayHas(this.molecule, atom).hasItem) {
             if (this.allId != atom.allId) {
                 this.molecule.push(atom);
                 atom.resetConnections();
@@ -125,6 +130,10 @@ class Electron{
         this.id = id;
         this.x;
         this.y;
+        this.metalicBond = "none";
+        this.metalicBondAtomGoingTo;
+        this.metalicBondAngleGoAt;
+        this.bondType = "none";
     }
     drawSelf(ctx){
         ctx.fillStyle = "#FFFFFFFF";
@@ -150,6 +159,18 @@ class Electron{
         let aroundY = (atom1.y+atom2.y)/2;
         this.x = aroundX+Math.cos(angle+Math.PI*(id%2))*(Math.floor(id/2)+0.5)*11;
         this.y = aroundY+Math.sin(angle+Math.PI*(id%2))*(Math.floor(id/2)+0.5)*11;
+    }
+    goToMetalicBond(){
+        if ((this.metalicBondAtomGoingTo.x-this.x)**2+(this.metalicBondAtomGoingTo.y-this.y)**2<529) {
+            this.resetMetalicBondAtomGoingTo();
+        } else {
+            this.metalicBondAngleGoAt = Math.atan2(this.metalicBondAtomGoingTo.y-this.y, this.metalicBondAtomGoingTo.x-this.x);
+            this.x += Math.cos(this.metalicBondAngleGoAt);
+            this.y += Math.sin(this.metalicBondAngleGoAt);
+        }
+    }
+    resetMetalicBondAtomGoingTo(){
+        this.metalicBondAtomGoingTo = this.metalicBond.atoms[randomBetween(0, this.metalicBond.atoms.length, 1)];
     }
 }
 
@@ -195,13 +216,116 @@ class IonicBond{
     }
 }
 
+class MetalicBond{
+    constructor(){
+        this.allId = allIdCounter;
+        allIdCounter++;
+        this.atoms = [];
+        this.electrons = [];
+    }
+    addAtom(atom){
+        this.atoms.push(atom);
+    }
+    removeAtom(atom){
+        this.atoms.splice(arrayHas(this.atoms, atom).itemPlace, 1);
+    }
+    addElectron(electron){
+        electron.atom.electrons.splice(electron.id, 1);
+        electron.atom.resetElectronIds();
+        electron.bondType = "metalic";
+        if (electron.metalicBond != "none") {
+            electron.metalicBond.removeElectron(electron);
+        }
+        electron.metalicBond = this;
+        electron.resetMetalicBondAtomGoingTo();
+        this.electrons.push(electron);
+    }
+    removeElectron(electron){
+        electron.atom.electrons.push(electron);
+        electron.atom.resetElectronIds();
+        electron.bondType = "none";
+        electron.metalicBond = "none";
+        this.electrons.splice(arrayHas(this.electrons, electron).itemPlace, 1);
+    }
+    showSelected(ctx, button){
+        ctx.strokeStyle = "#FFFF00FF";
+        ctx.lineWidth = 4;
+        if (button.innerText == "Select Atoms") {
+            this.atoms.forEach((atom)=>{
+                ctx.beginPath();
+                ctx.arc(atom.x, atom.y, 61, 0, Math.PI*2);
+                ctx.stroke()
+            });
+        }
+        if (button.innerText == "Select Electrons") {
+            this.electrons.forEach((electron)=>{
+                ctx.beginPath();
+                ctx.arc(electron.x, electron.y, 13, 0, Math.PI*2);
+                ctx.stroke()
+            });
+        }
+    }
+}
+
+class MetalicBondGUI{
+    constructor(metalicBond, parentElement, name){
+        this.allId = allIdCounter;
+        allIdCounter++;
+        this.metalicBond = metalicBond;
+        this.parentElement = parentElement;
+        this.rootElement = document.createElement("div");
+        this.parentElement.appendChild(this.rootElement);
+        this.nameInput = document.createElement("input");
+        this.nameInput.type = "text";
+        this.nameInput.value = name;
+        this.rootElement.appendChild(this.nameInput);
+        this.selectAtomsButton = document.createElement("button");
+        this.selectAtomsButton.innerText = "Select Atoms";
+        this.rootElement.appendChild(this.selectAtomsButton);
+        this.selectElectronsButton = document.createElement("button");
+        this.selectElectronsButton.innerText = "Select Electrons";
+        this.rootElement.appendChild(this.selectElectronsButton);
+        this.returnElectronsButton = document.createElement("button");
+        this.returnElectronsButton.innerText = "Return Electrons";
+        this.rootElement.appendChild(this.returnElectronsButton);
+        this.deleteSelfButton = document.createElement("button");
+        this.deleteSelfButton.innerText = "Delete";
+        this.rootElement.appendChild(this.deleteSelfButton);
+        this.selectAtomsButton.addEventListener("click", ()=>{
+            this.select(this.selectAtomsButton);
+        });
+        this.selectElectronsButton.addEventListener("click", ()=>{
+            this.select(this.selectElectronsButton);
+        });
+    }
+    deselect(button){
+        button.style.background = "white";
+    }
+    select(button){
+        if (metalicBondGUISelected != "none") {
+            metalicBondGUISelected.deselect(metalicBondButtonSelected);
+        }
+        if (metalicBondButtonSelected == button) {
+            metalicBondGUISelected = "none";
+            metalicBondButtonSelected = "none";
+        } else {
+            button.style.background = "gold";
+            metalicBondGUISelected = this;
+            metalicBondButtonSelected = button;
+        }
+    }
+}
+
 mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
 makeStuffMenu.style.display = "block";
 instructionsMenu.style.display = "none";
 atomModeButton.style.background = "gold";
+metalicBondsMenu.style.display = "none";
 let atoms = [];
 let covalentBonds = [];
 let ionicBonds = [];
+let metalicBonds = [];
+let closestElectronDefault = "none";
 let covalentBondAtom1 = "none";
 let covalentBondAtom2 = "none";
 let movingElectron = "none";
@@ -209,6 +333,8 @@ let pickTwoAtomsType = "none";
 let instructionsShown = false;
 let allIdCounter = 0;
 let mode = "atom";
+let metalicBondGUISelected = "none";
+let metalicBondButtonSelected = "none";
 
 elementSymbols = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne"];
 
@@ -226,13 +352,33 @@ function colorString(r, g, b, a){
 
 function arrayHas(array, item){
     let hasItem = false;
-    array.forEach((arrayItem)=>{
-        if (arrayItem.allId == item.allId) {
+    let itemPlace = "none";
+    for (i=0; i<array.length; i++) {
+        if (array[i].allId == item.allId) {
             hasItem = true;
+            itemPlace = i;
         }
-    });
-    return hasItem;
+    }
+    return {hasItem: hasItem, itemPlace: itemPlace};
 }
+
+function showMetalicBondsButtonClicked(){
+    if (showMetalicBondsButton.style.background == "gold") {
+        showMetalicBondsButton.style.background = "white";
+        metalicBondsMenu.style.display = "none";
+    } else {
+        showMetalicBondsButton.style.background = "gold";
+        metalicBondsMenu.style.display = "block";
+    }
+}
+showMetalicBondsButton.addEventListener("click", showMetalicBondsButtonClicked);
+
+function addMetalicBondButtonClicked(){
+    let metalicBond = new MetalicBond;
+    metalicBonds.push(metalicBond);
+    let metalicBondGUI = new MetalicBondGUI(metalicBond, metalicBondsMenu, addMetalicBondName.value);
+}
+addMetalicBondButton.addEventListener("click", addMetalicBondButtonClicked);
 
 function createNewIonicBond(positiveAtom, negativeAtom){
     let ionicBond = new IonicBond(positiveAtom, negativeAtom);
@@ -247,6 +393,7 @@ function createNewAtom(protons){
         atom.createNewElectron();
     }
     atoms.push(atom);
+    closestElectronDefault = atom.electrons[atom.electrons.length-1];
     return atom;
 }
 
@@ -259,9 +406,18 @@ function addAtomButtonClicked(){
 }
 addAtomButton.addEventListener("click", addAtomButtonClicked);
 
+function removeAtomButtonClicked(){
+    covalentBondAtom2 = "to-be-added";
+    pickTwoAtomsType = "remove-atom";
+    removeAtomButton.style.background = "gold";
+    removeCovalentBondButton.style.background = "white";
+    addCovalentBondButton.style.background = "white";
+}
+removeAtomButton.addEventListener("click", removeAtomButtonClicked);
+
 function mainCanvasClicked(event){
     let closestAtom = atoms[0];
-    let closestElectron = atoms[0].electrons[0];
+    let closestElectron = closestElectronDefault;
     atoms.forEach((atom)=>{
         if ((closestAtom.x-event.clientX)**2 + (closestAtom.y-event.clientY)**2 > (atom.x-event.clientX)**2 + (atom.y-event.clientY)**2) {
             closestAtom = atom;
@@ -273,6 +429,13 @@ function mainCanvasClicked(event){
         });
     });
     if ((closestAtom.x-event.clientX)**2 + (closestAtom.y-event.clientY)**2 < 529) {
+        if (metalicBondButtonSelected.innerText == "Select Atoms") {
+            if (arrayHas(metalicBondGUISelected.metalicBond.atoms, closestAtom).hasItem) {
+                metalicBondGUISelected.metalicBond.removeAtom(closestAtom);
+            } else {
+                metalicBondGUISelected.metalicBond.addAtom(closestAtom);
+            }
+        }
         function mainCanvasUnclicked(){
             mainCanvas.removeEventListener("mouseup", mainCanvasUnclicked);
             mainCanvas.removeEventListener("mousemove", mouseMoved);
@@ -297,64 +460,81 @@ function mainCanvasClicked(event){
                 covalentBondAtom2 = closestAtom;
                 if (pickTwoAtomsType == "add-covalent-bond") {
                     addCovalentBond(covalentBondAtom1, covalentBondAtom2);
+                    addCovalentBondButton.style.background = "white";
                 }
                 if (pickTwoAtomsType == "remove-covalent-bond") {
                     removeCovalentBond(covalentBondAtom1, covalentBondAtom2);
+                    removeCovalentBondButton.style.background = "white";
+                }
+                if (pickTwoAtomsType == "remove-atom") {
+                    closestAtom.resetConnections();
+                    removeAtomButton.style.background = "white";
+                    if (closestAtom.connections.length == 0) {
+                        atoms.splice(arrayHas(atoms, closestAtom).itemPlace, 1);
+                    }
                 }
             }
         }
     } else {
         if ((closestElectron.x-event.clientX)**2 + (closestElectron.y-event.clientY)**2 < 169) {
-            movingElectron = closestElectron;
-            function mainCanvasUnclicked(){
-                mainCanvas.removeEventListener("mouseup", mainCanvasUnclicked);
-                mainCanvas.removeEventListener("mousemove", mouseMoved);
-                closestAtom = atoms[0];
-                atoms.forEach((atom)=>{
-                    if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 > (atom.x-closestElectron.x)**2 + (atom.y-closestElectron.y)**2) {
-                        closestAtom = atom;
-                    }
-                });
-                if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 < 2209) {
-                    let ionicBondId = "none";
-                    let ionicBond = "none";
-                    for (i=0; i<closestElectron.atom.ionicBonds.length; i++) {
-                        if (closestElectron.atom.ionicBonds[i].positiveAtom == closestAtom) {
-                            ionicBondId = i;
-                            ionicBond = closestElectron.atom.ionicBonds[i];
-                        }
-                    }
-                    if (ionicBond == "none") {
-                        createNewIonicBond(closestElectron.atom, closestAtom);
-                    } else {
-                        closestElectron.atom.ionicBonds.splice(ionicBondId, 1);
-                        for (i=0; i<closestAtom.ionicBonds.length; i++) {
-                            if (closestAtom.ionicBonds[i] == ionicBond) {
-                                ionicBondId = i;
-                            }
-                        }
-                        closestAtom.ionicBonds.splice(ionicBondId, 1);
-                        for (i=0; i<ionicBonds.length; i++) {
-                            if (ionicBonds[i] == ionicBond) {
-                                ionicBondId = i;
-                            }
-                        }
-                        ionicBonds.splice(ionicBondId, 1);
-                    }
-                    closestElectron.atom.electrons.splice(closestElectron.id, 1);
-                    closestAtom.electrons.push(closestElectron);
-                    closestElectron.atom.resetElectronIds();
-                    closestElectron.atom = closestAtom;
-                    closestAtom.resetElectronIds();
-                    movingElectron = "none";
+            if (metalicBondButtonSelected.innerText == "Select Electrons") {
+                if (arrayHas(metalicBondGUISelected.metalicBond.electrons, closestElectron).hasItem) {
+                    metalicBondGUISelected.metalicBond.removeElectron(closestElectron);
+                } else {
+                    metalicBondGUISelected.metalicBond.addElectron(closestElectron);
                 }
+            } else {
+                movingElectron = closestElectron;
+                function mainCanvasUnclicked(){
+                    mainCanvas.removeEventListener("mouseup", mainCanvasUnclicked);
+                    mainCanvas.removeEventListener("mousemove", mouseMoved);
+                    closestAtom = atoms[0];
+                    atoms.forEach((atom)=>{
+                        if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 > (atom.x-closestElectron.x)**2 + (atom.y-closestElectron.y)**2) {
+                            closestAtom = atom;
+                        }
+                    });
+                    if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 < 2209) {
+                        let ionicBondId = "none";
+                        let ionicBond = "none";
+                        for (i=0; i<closestElectron.atom.ionicBonds.length; i++) {
+                            if (closestElectron.atom.ionicBonds[i].positiveAtom == closestAtom) {
+                                ionicBondId = i;
+                                ionicBond = closestElectron.atom.ionicBonds[i];
+                            }
+                        }
+                        if (ionicBond == "none") {
+                            createNewIonicBond(closestElectron.atom, closestAtom);
+                        } else {
+                            closestElectron.atom.ionicBonds.splice(ionicBondId, 1);
+                            for (i=0; i<closestAtom.ionicBonds.length; i++) {
+                                if (closestAtom.ionicBonds[i] == ionicBond) {
+                                    ionicBondId = i;
+                                }
+                            }
+                            closestAtom.ionicBonds.splice(ionicBondId, 1);
+                            for (i=0; i<ionicBonds.length; i++) {
+                                if (ionicBonds[i] == ionicBond) {
+                                    ionicBondId = i;
+                                }
+                            }
+                            ionicBonds.splice(ionicBondId, 1);
+                        }
+                        closestElectron.atom.electrons.splice(closestElectron.id, 1);
+                        closestAtom.electrons.push(closestElectron);
+                        closestElectron.atom.resetElectronIds();
+                        closestElectron.atom = closestAtom;
+                        closestAtom.resetElectronIds();
+                        movingElectron = "none";
+                    }
+                }
+                mainCanvas.addEventListener("mouseup", mainCanvasUnclicked);
+                function mouseMoved(moveEvent){
+                    closestElectron.x = moveEvent.clientX;
+                    closestElectron.y = moveEvent.clientY;
+                }
+                mainCanvas.addEventListener("mousemove", mouseMoved);
             }
-            mainCanvas.addEventListener("mouseup", mainCanvasUnclicked);
-            function mouseMoved(moveEvent){
-                closestElectron.x = moveEvent.clientX;
-                closestElectron.y = moveEvent.clientY;
-            }
-            mainCanvas.addEventListener("mousemove", mouseMoved);
         }
     }
 }
@@ -364,6 +544,9 @@ function addCovalentBondButtonClicked(){
     pickTwoAtomsType = "add-covalent-bond";
     covalentBondAtom1 = "to-be-added";
     covalentBondAtom2 = "to-be-added";
+    addCovalentBondButton.style.background = "gold";
+    removeAtomButton.style.background = "white";
+    removeCovalentBondButton.style.background = "white";
 }
 addCovalentBondButton.addEventListener("click", addCovalentBondButtonClicked)
 
@@ -371,6 +554,9 @@ function removeCovalentBondButtonClicked(){
     pickTwoAtomsType = "remove-covalent-bond";
     covalentBondAtom1 = "to-be-added";
     covalentBondAtom2 = "to-be-added";
+    removeCovalentBondButton.style.background = "gold";
+    removeAtomButton.style.background = "white";
+    addCovalentBondButton.style.background = "white";
 }
 removeCovalentBondButton.addEventListener("click", removeCovalentBondButtonClicked)
 
@@ -395,6 +581,8 @@ function addCovalentBond(atom1, atom2){
     atom2.covalentBonds.push(covalentBond);
     covalentBond.electrons.push(atom1.electrons[atom1.electrons.length-1]);
     covalentBond.electrons.push(atom2.electrons[atom2.electrons.length-1]);
+    atom1.electrons[atom1.electrons.length-1].bondType = "covalent";
+    atom2.electrons[atom2.electrons.length-1].bondType = "covalent";
     atom1.electrons.splice(atom1.electrons.length-1, 1);
     atom2.electrons.splice(atom2.electrons.length-1, 1);
 }
@@ -415,9 +603,11 @@ function removeCovalentBond(atom1, atom2){
     }
     if (toBeRemoved != "none") {
         toBeRemoved.electrons[toBeRemoved.electrons.length-1].atom = atom1;
+        toBeRemoved.electrons[toBeRemoved.electrons.length-1].bondType = "none";
         atom1.electrons.push(toBeRemoved.electrons[toBeRemoved.electrons.length-1]);
         toBeRemoved.electrons.splice(toBeRemoved.electrons.length-1, 1);
         toBeRemoved.electrons[toBeRemoved.electrons.length-1].atom = atom2;
+        toBeRemoved.electrons[toBeRemoved.electrons.length-1].bondType = "none";
         atom2.electrons.push(toBeRemoved.electrons[toBeRemoved.electrons.length-1]);
         toBeRemoved.electrons.splice(toBeRemoved.electrons.length-1, 1);
         atom1.covalentBonds.splice(toBeRemovedNumber, 1);
@@ -482,6 +672,15 @@ function drawingLoop(){
                 if (electron != movingElectron) {
                     electron.goToAtom();
                 }
+                electron.drawSelf(mainCTX);
+            });
+        });
+        if (metalicBondGUISelected != "none") {
+            metalicBondGUISelected.metalicBond.showSelected(mainCTX, metalicBondButtonSelected);
+        }
+        metalicBonds.forEach((metalicBond)=>{
+            metalicBond.electrons.forEach((electron)=>{
+                electron.goToMetalicBond();
                 electron.drawSelf(mainCTX);
             });
         });
