@@ -26,7 +26,6 @@ class Atom{
         this.firstShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.secondShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.covalentBonds = [];
-        this.ionicBonds = [];
         this.connections = [];
         this.molecule = [];
     }
@@ -83,19 +82,6 @@ class Atom{
                 if (covalentBond.atom2.allId != this.allId) {
                     if (!arrayHas(this.connections, covalentBond.atom2).hasItem) {
                         this.connections.push(covalentBond.atom2);
-                    }
-                }
-            }
-        });
-        this.ionicBonds.forEach((ionicBond)=>{
-            if (ionicBond.positiveAtom.allId != this.allId) {
-                if (!arrayHas(this.connections, ionicBond.positiveAtom).hasItem) {
-                    this.connections.push(ionicBond.positiveAtom);
-                }
-            } else {
-                if (ionicBond.negativeAtom.allId != this.allId) {
-                    if (!arrayHas(this.connections, ionicBond.negativeAtom).hasItem) {
-                        this.connections.push(ionicBond.negativeAtom);
                     }
                 }
             }
@@ -196,23 +182,6 @@ class CovalentBond{
             this.electrons[i].goToCovalentBond(angle, this.atom1, this.atom2, i);
             this.electrons[i].drawSelf(mainCTX);
         }
-    }
-}
-
-class IonicBond{
-    constructor(positiveAtom, negativeAtom){
-        this.allId = allIdCounter;
-        allIdCounter++;
-        this.positiveAtom = positiveAtom;
-        this.negativeAtom = negativeAtom;
-    }
-    drawSelf(ctx){
-        ctx.strokeStyle = "#888888FF";
-        ctx.lineWidth = 17;
-        ctx.beginPath();
-        ctx.moveTo(this.positiveAtom.x, this.positiveAtom.y);
-        ctx.lineTo(this.negativeAtom.x, this.negativeAtom.y);
-        ctx.stroke();
     }
 }
 
@@ -323,7 +292,6 @@ atomModeButton.style.background = "gold";
 metalicBondsMenu.style.display = "none";
 let atoms = [];
 let covalentBonds = [];
-let ionicBonds = [];
 let metalicBonds = [];
 let closestElectronDefault = "none";
 let covalentBondAtom1 = "none";
@@ -379,13 +347,6 @@ function addMetalicBondButtonClicked(){
     let metalicBondGUI = new MetalicBondGUI(metalicBond, metalicBondsMenu, addMetalicBondName.value);
 }
 addMetalicBondButton.addEventListener("click", addMetalicBondButtonClicked);
-
-function createNewIonicBond(positiveAtom, negativeAtom){
-    let ionicBond = new IonicBond(positiveAtom, negativeAtom);
-    positiveAtom.ionicBonds.push(ionicBond);
-    negativeAtom.ionicBonds.push(ionicBond);
-    ionicBonds.push(ionicBond);
-}
 
 function createNewAtom(protons){
     let atom = new Atom(protons);
@@ -495,31 +456,6 @@ function mainCanvasClicked(event){
                         }
                     });
                     if ((closestAtom.x-closestElectron.x)**2 + (closestAtom.y-closestElectron.y)**2 < 2209) {
-                        let ionicBondId = "none";
-                        let ionicBond = "none";
-                        for (i=0; i<closestElectron.atom.ionicBonds.length; i++) {
-                            if (closestElectron.atom.ionicBonds[i].positiveAtom == closestAtom) {
-                                ionicBondId = i;
-                                ionicBond = closestElectron.atom.ionicBonds[i];
-                            }
-                        }
-                        if (ionicBond == "none") {
-                            createNewIonicBond(closestElectron.atom, closestAtom);
-                        } else {
-                            closestElectron.atom.ionicBonds.splice(ionicBondId, 1);
-                            for (i=0; i<closestAtom.ionicBonds.length; i++) {
-                                if (closestAtom.ionicBonds[i] == ionicBond) {
-                                    ionicBondId = i;
-                                }
-                            }
-                            closestAtom.ionicBonds.splice(ionicBondId, 1);
-                            for (i=0; i<ionicBonds.length; i++) {
-                                if (ionicBonds[i] == ionicBond) {
-                                    ionicBondId = i;
-                                }
-                            }
-                            ionicBonds.splice(ionicBondId, 1);
-                        }
                         closestElectron.atom.electrons.splice(closestElectron.id, 1);
                         closestAtom.electrons.push(closestElectron);
                         closestElectron.atom.resetElectronIds();
@@ -660,9 +596,6 @@ function drawingLoop(){
     } else {
         mainCTX.fillStyle = "#00000022";
         mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
-        ionicBonds.forEach((ionicBond)=>{
-            ionicBond.drawSelf(mainCTX);
-        });
         covalentBonds.forEach((covalentBond)=>{
             covalentBond.drawSelf(mainCTX);
         });
