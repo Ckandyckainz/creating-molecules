@@ -26,6 +26,7 @@ class Atom{
         this.firstShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.secondShellAngle = randomBetween(0, Math.PI*2, 0.01);
         this.covalentBonds = [];
+        this.metalicBonds = [];
         this.connections = [];
         this.molecule = [];
     }
@@ -85,6 +86,15 @@ class Atom{
                     }
                 }
             }
+        });
+        this.metalicBonds.forEach((metalicBond)=>{
+            metalicBond.atoms.forEach((atom)=>{
+                if (atom.allId != this.allId) {
+                    if (!arrayHas(this.connections, atom).hasItem) {
+                        this.connections.push(atom);
+                    }
+                }
+            });
         });
     }
     resetMolecule(){
@@ -194,9 +204,11 @@ class MetalicBond{
     }
     addAtom(atom){
         this.atoms.push(atom);
+        atom.metalicBonds.push(this);
     }
     removeAtom(atom){
         this.atoms.splice(arrayHas(this.atoms, atom).itemPlace, 1);
+        atom.metalicBonds.splice(arrayHas(atom.metalicBonds, this).itemPlace, 1);
     }
     addElectron(electron){
         electron.atom.electrons.splice(electron.id, 1);
