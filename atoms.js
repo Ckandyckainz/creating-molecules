@@ -29,6 +29,7 @@ class Atom{
         this.metalicBonds = [];
         this.connections = [];
         this.molecule = [];
+        this.charge = 0;
     }
     drawSelf(ctx){
         if (this.electrons.length+(this.covalentBonds.length*2) > 2) {
@@ -36,7 +37,7 @@ class Atom{
         ctx.beginPath();
         ctx.arc(this.x, this.y, 45, 0, Math.PI*2);
         ctx.fill();
-        ctx.fillStyle = colorString(0.194+(this.electrons.length+this.covalentBonds.length-this.protons)/20, 0, 0.258+(this.protons-this.electrons.length-this.covalentBonds.length)/20, 1);
+        ctx.fillStyle = colorString(0.2+this.charge/15, 0, 0.2-this.charge/15, 1);
         ctx.beginPath();
         ctx.arc(this.x, this.y, 43, 0, Math.PI*2);
         ctx.fill();
@@ -45,7 +46,7 @@ class Atom{
         ctx.beginPath();
         ctx.arc(this.x, this.y, 31, 0, Math.PI*2);
         ctx.fill();
-        ctx.fillStyle = colorString(0.194+(this.electrons.length+this.covalentBonds.length-this.protons)/20, 0, 0.258+(this.protons-this.electrons.length-this.covalentBonds.length)/20, 1);
+        ctx.fillStyle = colorString(0.2+this.charge/15, 0, 0.2-this.charge/15, 1);
         ctx.beginPath();
         ctx.arc(this.x, this.y, 29, 0, Math.PI*2);
         ctx.fill();
@@ -53,7 +54,7 @@ class Atom{
         ctx.beginPath();
         ctx.arc(this.x, this.y, 23, 0, Math.PI*2);
         ctx.fill();
-        ctx.fillStyle = "#0000FFFF";
+        ctx.fillStyle = "#CC0000FF";
         ctx.beginPath();
         ctx.arc(this.x, this.y, 19, 0, Math.PI*2);
         ctx.fill();
@@ -71,6 +72,7 @@ class Atom{
         for (i=0; i<this.electrons.length; i++) {
             this.electrons[i].id = i;
         }
+        this.charge = this.protons-this.electrons.length-this.covalentBonds.length;
     }
     resetConnections(){
         this.connections = [];
@@ -136,7 +138,7 @@ class Electron{
         ctx.beginPath();
         ctx.arc(this.x, this.y, 5, 0, Math.PI*2);
         ctx.fill();
-        ctx.fillStyle = "#FF0000FF";
+        ctx.fillStyle = "#0000FFFF";
         ctx.beginPath();
         ctx.arc(this.x, this.y, 3, 0, Math.PI*2);
         ctx.fill();
@@ -581,7 +583,7 @@ function instructionsButtonClicked(){
     } else {
         makeStuffMenu.style.display = "block";
         instructionsMenu.style.display = "none";
-        instructionsButton.innerText = "instructions";
+        instructionsButton.innerText = "Instructions";
     }
 }
 instructionsButton.addEventListener("click", instructionsButtonClicked);
