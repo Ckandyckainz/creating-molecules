@@ -72,6 +72,9 @@ class Atom{
         for (i=0; i<this.electrons.length; i++) {
             this.electrons[i].id = i;
         }
+        this.resetCharge();
+    }
+    resetCharge(){
         this.charge = this.protons-this.electrons.length-this.covalentBonds.length;
     }
     resetConnections(){
@@ -130,6 +133,7 @@ class Electron{
         this.y;
         this.metalicBond = "none";
         this.metalicBondAtomGoingTo;
+        this.metalicBondAtomGoingFrom;
         this.metalicBondAngleGoAt;
         this.bondType = "none";
     }
@@ -165,9 +169,14 @@ class Electron{
             this.metalicBondAngleGoAt = Math.atan2(this.metalicBondAtomGoingTo.y-this.y, this.metalicBondAtomGoingTo.x-this.x);
             this.x += Math.cos(this.metalicBondAngleGoAt);
             this.y += Math.sin(this.metalicBondAngleGoAt);
+            let d1 = Math.sqrt((this.metalicBondAtomGoingTo.y-this.y)**2+(this.metalicBondAtomGoingTo.x-this.x)**2);
+            let d2 = Math.sqrt((this.metalicBondAtomGoingFrom.y-this.y)**2+(this.metalicBondAtomGoingFrom.x-this.x)**2);
+            this.metalicBondAtomGoingFrom.charge -= d1/(d1+d2);
+            this.metalicBondAtomGoingTo.charge -= d2/(d1+d2);
         }
     }
     resetMetalicBondAtomGoingTo(){
+        this.metalicBondAtomGoingFrom = this.metalicBondAtomGoingTo;
         this.metalicBondAtomGoingTo = this.metalicBond.atoms[randomBetween(0, this.metalicBond.atoms.length, 1)];
     }
 }
@@ -221,6 +230,7 @@ class MetalicBond{
         }
         electron.metalicBond = this;
         electron.resetMetalicBondAtomGoingTo();
+        electron.metalicBondAtomGoingFrom = this.atoms[randomBetween(0, this.atoms.length, 1)];
         this.electrons.push(electron);
     }
     removeElectron(electron){
@@ -602,12 +612,14 @@ function moleculeModeButtonClicked(){
 }
 moleculeModeButton.addEventListener("click", moleculeModeButtonClicked);
 
+let counter = 0;
 drawingLoop();
 
 function drawingLoop(){
     if (instructionsShown) {
 
     } else {
+        counter ++;
         mainCTX.fillStyle = "#00000022";
         mainCTX.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
         covalentBonds.forEach((covalentBond)=>{
@@ -626,6 +638,9 @@ function drawingLoop(){
             metalicBondGUISelected.metalicBond.showSelected(mainCTX, metalicBondButtonSelected);
         }
         metalicBonds.forEach((metalicBond)=>{
+            metalicBond.atoms.forEach((atom)=>{
+                atom.resetCharge();
+            });
             metalicBond.electrons.forEach((electron)=>{
                 electron.goToMetalicBond();
                 electron.drawSelf(mainCTX);
